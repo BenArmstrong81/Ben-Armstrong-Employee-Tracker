@@ -1,10 +1,20 @@
 //----------Imports and requires inquirer
 const inquirer = require('inquirer');
+const figlet = require('figlet');
 //----------Imports and requires mysql2
 const mysql = require('mysql2');
 
+
+figlet("Employee Manager", function(err, data) {
+  if (err) {
+      console.log('Something went wrong...');
+      console.dir(err);
+      return;
+  }
+  console.log(data)
+});    
 //----------Connects to database:
-const db = mysql.createConnection(
+const connection = mysql.createConnection(
     {
       host: 'localhost',
       user: 'root',
@@ -15,25 +25,7 @@ const db = mysql.createConnection(
   );
 
 
-const mainMenu = () => {
-//BEN TO AMEND, for some reason syntax not working??
-    console.log(` _________________________________________________
-                 |                                                 |
-                 |  _____                 _                        |
-                 | | ____|_ __ ___  _ __ | | ___  _   _  ___  ___  |
-                 | |  _| | '_ ` _ \| '_ \| |/ _ \| | | |/ _ \/ _ \ |
-                 | | |___| | | | | | |_) | | (_) | |_| |  __/  __/ |
-                 | |_____|_| |_| |_| .__/|_|\___/ \__, |\___|\___| |
-                 |                 |_|             |__/            |
-                 |  __  __                                         |
-                 | |  \/  | ___ _ _ __   __ _  __ _  ___ _ __      |
-                 | | |\/| |/  _ `| '_ \ / _` |/ _` |/ _ \ '__|     |
-                 | | |  | |  (_| | | | | (_| | (_| |  __/ |        |
-                 | |_|  |_|\___,_|_| |_|\__,_|\__, |\___|_|        |
-                 |                            |___/                |
-                 |                                                 |
-                 |_________________________________________________|
-                 `);
+const mainMenu = () => { 
     inquirer
       .prompt({
         name: "startingOptions",
@@ -56,7 +48,7 @@ const mainMenu = () => {
       .then((answer) => {
         // console.log(answer);
         switch (answer.startingOptions) {
-        case "View All Employees":
+        case "View all Employees":
             ViewAllEmployees();
             break;
   
@@ -105,23 +97,22 @@ const mainMenu = () => {
 
 //----------Upon user input views "All Employees" using: id, first_name, last_name, role_title, department, salary, manager :
   function ViewAllEmployees() {
-    const query = `SELECT 
-    employee.id, 
-    employee.first_name, 
-    employee.last_name, 
-    role.title, 
-    department.name AS 
-    department, 
+    const query = `SELECT  
+    employees.id, 
+    employees.first_name, 
+    employees.last_name, 
+    role.title,  
+    department_name,
     role.salary, 
     CONCAT(manager.first_name, ' ', manager.last_name) AS 
     manager FROM 
-    employee 
+    employees 
     LEFT JOIN role ON 
-    employee.role_id = role.id 
+    employees.role_id = role.id 
     LEFT JOIN department ON 
     role.department_id = department.id 
-    LEFT JOIN employee manager ON 
-    manager.id = employee.manager_id;`;
+    LEFT JOIN employees manager ON 
+    manager.id = employees.manager_id;`;
     // show result in the terminal by console.table
     connection.query(query, (err, data) => {
       if (err) throw err;
@@ -129,7 +120,7 @@ const mainMenu = () => {
       mainMenu();
     });
   }
-//----------Upon user input "Add Employee" // first name, last name, role, and manager
+//----------Upon user input "Add Employee" which will include: first name, last name, role, and manager
 function AddEmployee() {
     let userInput1;
     const query = `SELECT id, title FROM role WHERE title NOT LIKE '%Manager%';`;
@@ -170,9 +161,9 @@ function AddEmployee() {
         const query2 = `SELECT 
         manager.id as manager_id,
         CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name
-        FROM employee
-        LEFT JOIN role ON employee.role_id = role.id
-        LEFT JOIN employee AS manager ON manager.id = employee.manager_id 
+        FROM employees
+        LEFT JOIN role ON employees.role_id = role.id
+        LEFT JOIN employees AS manager ON manager.id = employees.manager_id 
         WHERE manager.id IS NOT NULL
         GROUP BY manager_id;`;
         return new Promise((resolve, reject) => {
@@ -196,7 +187,7 @@ function AddEmployee() {
         ]);
       })
       .then((answer) => {
-        const query = `INSERT INTO employee 
+        const query = `INSERT INTO employees 
         (first_name, last_name, role_id, manager_id) 
         VALUES (?, ?, ?, ?)`;
         connection.query(
@@ -220,21 +211,20 @@ function AddEmployee() {
 //----------Upon User Input, It Allows The User to Remove an Employee:
 function RemoveEmployee() {
     const query = `SELECT 
-    employee.id, 
-    employee.first_name, 
-    employee.last_name, 
+    employees.id, 
+    employees.first_name, 
+    employees.last_name, 
     role.title, 
-    department.name AS 
-    department, 
+    department_name, 
     role.salary, 
     CONCAT(manager.first_name, ' ', manager.last_name) AS 
     manager FROM 
-    employee LEFT JOIN role ON 
-    employee.role_id = role.id 
+    employees LEFT JOIN role ON 
+    employees.role_id = role.id 
     LEFT JOIN department ON 
     role.department_id = department.id LEFT JOIN 
-    employee manager ON 
-    manager.id = employee.manager_id;`;
+    employees manager ON 
+    manager.id = employees.manager_id;`;
     connection.query(query, (err, data) => {
       if (err) throw err;
       const employees = data.map(
@@ -242,16 +232,16 @@ function RemoveEmployee() {
       );
       inquirer
         .prompt({
-          name: "employee",
+          name: "employees",
           type: "list",
           message: "Which Employee Would you Like to Remove?",
           choices: [...employees],
         })
         .then((answer) => {
-          const query = `DELETE FROM employee WHERE first_name = ? AND last_name = ?`;
+          const query = `DELETE FROM employees WHERE first_name = ? AND last_name = ?`;
           connection.query(
             query,
-            [answer.employee.split(" ")[0], answer.employee.split(" ")[1]],
+            [answer.employees.split(" ")[0], answer.employees.split(" ")[1]],
             (err, data) => {
               // console.log("line 340", data);
               if (err) throw err;
@@ -324,7 +314,7 @@ function ViewAllRoles() {
      role.id, 
      role.title, 
      role.salary, 
-     department.name AS department 
+     department_name AS department 
      FROM role 
      LEFT JOIN department ON 
      role.department_id = department.id;`;
@@ -430,7 +420,7 @@ function ViewAllRoles() {
 function ViewAllDepartments() {
     const query = `SELECT 
     department.id, 
-    department.name FROM 
+    department_name FROM 
     department;`;
     connection.query(query, (err, data) => {
       if (err) throw err;
@@ -445,19 +435,19 @@ function ViewAllDepartments() {
       .prompt([
         {
           type: "input",
-          name: "name",
+          name: "department_name",
           message: "What is the name of your new Department?",
         },
       ])
       .then((data) => {
-        const { name } = data;
+        const { department_name } = data;
         connection.query(
-          `INSERT INTO department (name) VALUES (?)`,
-          [name],
+          `INSERT INTO department (department_name) VALUES (?)`,
+          [department_name],
           (err, res) => {
             if (err) throw err;
             console.log(
-              `\n-------------------\n Department ${name} has been Added!\n`
+              `\n-------------------\n Department ${department_name} has been Added!\n`
             );
             ViewAllDepartments();
           }
@@ -511,10 +501,120 @@ function ViewAllDepartments() {
         });
     });
   }
+// =============view all employees by manager===========
+function ViewAllEmployeesByManager() {
+  // display a list includes all managers: first name, last name
+  const query = `SELECT 
+   employees.id, 
+   employees.first_name, 
+   employees.last_name, 
+   role.title, 
+   department.name AS 
+   department, 
+   CONCAT(manager.first_name, ' ', manager.last_name) AS manager 
+   FROM employees 
+   LEFT JOIN role ON employees.role_id = role.id 
+   LEFT JOIN department ON role.department_id = department.id 
+   LEFT JOIN employees manager ON manager.id = employees.manager_id 
+   ORDER BY manager;`;
+  connection.query(query, (err, data) => {
+    if (err) throw err;
+    console.table(data);
+    mainMenu();
+  });
+}
+// ========== update employee manager ==========
+function UpdateEmployeeManager() {
+  // show all ee's as a list
+  const query = `SELECT first_name, last_name FROM employee;`;
+  connection.query(query, (err, data) => {
+  // map all ee's to an array
+  const employees = data.map(
+    (item) => `${item.first_name} ${item.last_name}`
+  );
+  // prompt user to select an ee to update
+  inquirer
+    .prompt([
+      {
+        name: "employee",
+        type: "list",
+        message: "Which employee would you like to update?",
+        choices: employees,
+      },
+    ])
+    .then((answer) => {
+      // console.log("line 400+ &&&", answer); // returns the selected employee
+      // get the selected employee's first and last name
+      const selectedEmployee = answer.employee.split(" ");
+      const firstName = selectedEmployee[0];
+      const lastName = selectedEmployee[1];
+ 
+      // query all managers 
+      const query = `SELECT 
+      first_name, last_name 
+      FROM employees 
+      WHERE manager_id IS NULL 
+      AND first_name != '${firstName}' 
+      AND last_name != '${lastName}';`;
+      connection.query(query, (err, data) => {
+        //console.log("line 400+ ***", data); 
+        // map all managers to an array
+        const managers = data.map(
+          (item) => `${item.first_name} ${item.last_name}`
+        );
+        // prompt the user to select a new manager
+        inquirer
+          .prompt({
+            name: "manager",
+            type: "list",
+            message: "Who is the employee's new manager?",
+            choices: managers,
+          })
+          .then((answer) => {
+            // get the selected manager's id
+            const query = `SELECT id FROM employee WHERE first_name = ? AND last_name = ?`;
+            connection.query(query, [answer.manager.split(" ")[0], answer.manager.split(" ")[1]], (err, data) => {
+              if (err) throw err;
+              const managerId = data[0].id;
+              // update the employee's manager in the database
+              const query = `UPDATE employee SET manager_id = ? WHERE first_name = ? AND last_name = ?`;
+              connection.query(
+                query,
+                [managerId, firstName, lastName],
+                (err, data) => {
+                  if (err) throw err;
+                  console.log(
+                    `Successfully updated ${firstName} ${lastName}'s manager to ${answer.manager}.`
+                  );
+                  ViewAllEmployees();
+                }
+              );
+            });
+          });
+      }
+    );
+  });
+});
+}
+// ============ total utilized budget of a department ===========
+function ViewTotalUtilizedBudgetByDepartment() {
+  // total budget: department, sum of salaries
+  const query = `SELECT department.name AS department, 
+   SUM(role.salary) AS utilized_budget FROM employee 
+   LEFT JOIN role ON employee.role_id = role.id 
+   LEFT JOIN department ON role.department_id = department.id 
+   GROUP BY department.name;`;
+  connection.query(query, (err, data) => {
+    if (err) throw err;
+    console.table(data);
+    mainMenu();
+  });
+}
+  
 //----------Exit's the Application:
 function Exit() {
-    console.log("Thanks for Using the Emplyee Tracker, Have a GREAT Day!");
-    connection.end();
-  }
+  console.log("Thanks for Using the Employee Management Tracker Have a ✨ GREAT Day!✨");
+  connection.end();
+}
   
-  mainMenu();
+mainMenu();
