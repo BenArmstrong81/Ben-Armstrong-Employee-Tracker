@@ -1,10 +1,11 @@
-//----------Imports and requires inquirer
+//----------Imports and requires inquirer, figlet and console.table:
 const inquirer = require('inquirer');
 const figlet = require('figlet');
-//----------Imports and requires mysql2
+// require("console.table");
+//----------Imports and requires mysql2:
 const mysql = require('mysql2');
 
-
+//----------"Employee Manager" banner using figlet:
 figlet("Employee Manager", function(err, data) {
   if (err) {
       console.log('Something went wrong...');
@@ -23,8 +24,7 @@ const connection = mysql.createConnection(
     },
     console.log(`Connected to the Employee Management Database.`)
   );
-
-
+//-----------Initiates Main Menu Options:
 const mainMenu = () => { 
     inquirer
       .prompt({
@@ -42,16 +42,16 @@ const mainMenu = () => {
             "View all Departments", 
             "Add a Department", 
             "Remove a Department", 
+            "View Total Utilized Budget of a Department",
             "Quit", 
         ],
       })
       .then((answer) => {
-        // console.log(answer);
         switch (answer.startingOptions) {
         case "View all Employees":
             ViewAllEmployees();
             break;
-  
+
         case "Add an Employee":
             AddEmployee();
             break;
@@ -88,6 +88,10 @@ const mainMenu = () => {
             RemoveDepartment();
             break;
   
+        case "View Total Utilized Budget of a Department":
+            ViewTotalUtilizedBudgetByDepartment();
+            break;
+
           case "Quit":
             Exit();
             break;
@@ -113,7 +117,6 @@ const mainMenu = () => {
     role.department_id = department.id 
     LEFT JOIN employees manager ON 
     manager.id = employees.manager_id;`;
-    // show result in the terminal by console.table
     connection.query(query, (err, data) => {
       if (err) throw err;
       console.table(data);
@@ -243,7 +246,6 @@ function RemoveEmployee() {
             query,
             [answer.employees.split(" ")[0], answer.employees.split(" ")[1]],
             (err, data) => {
-              // console.log("line 340", data);
               if (err) throw err;
               console.log(
                 `You have Successfully Removed ${answer.employee} from the Emplyee's Database.`
@@ -257,7 +259,7 @@ function RemoveEmployee() {
   
 //----------Upon User Input, Allows User to Update an Employee's Role:
   function UpdateEmployeeRole() {
-    const query = `SELECT first_name, last_name FROM employee;`;
+    const query = `SELECT first_name, last_name FROM employees;`;
     connection.query(query, (err, data) => {
       const employees = data.map(
         (item) => `${item.first_name} ${item.last_name}`
@@ -290,7 +292,7 @@ function RemoveEmployee() {
                 connection.query(query, [answer.role], (err, data) => {
                   if (err) throw err;
                   const roleId = data[0].id;
-                  const query = `UPDATE employee SET role_id = ? WHERE first_name = ? AND last_name = ?`;
+                  const query = `UPDATE employees SET role_id = ? WHERE first_name = ? AND last_name = ?`;
                   connection.query(
                     query,
                     [roleId, firstName, lastName],
@@ -327,10 +329,10 @@ function ViewAllRoles() {
   
 //----------Upon User Input, Add's a New Role:
   function AddRole() {
-    const query = `SELECT department.name FROM department`;
+    const query = `SELECT department_name FROM department`;
     connection.query(query, (err, data) => {
       if (err) throw err;
-      const departments = data.map((item) => `${item.name}`);
+      const department = data.map((item) => `${item.department_name}`);
       inquirer
         .prompt([
           {
@@ -347,17 +349,16 @@ function ViewAllRoles() {
             type: "list",
             name: "department_name",
             message: "What is the Department of Your Newly Created Role?",
-            choices: [...departments],
+            choices: [...department],
           },
         ])
         .then((data) => {
           const { title, salary, department_name } = data;
-          connection.query(
-            `INSERT INTO role (title, salary, department_id)
-               SELECT ?, ?, department.id
-               FROM department
-               WHERE department.name = ?`,
-            [title, salary, department_name],
+          connection.query(`insert into role(title, salary, department_id)
+          select ?, ?, department.id
+          from department
+          where department.department_name = ?`,
+          [ title, salary, department_name],        
             (err, res) => {
               if (err) throw err;
               console.log(
@@ -457,38 +458,38 @@ function ViewAllDepartments() {
   
 //----------Upon User input, Remove's a Department:
   function RemoveDepartment() {
-    connection.query("SELECT department.name FROM department", (err, data) => {
-      const departments = data.map((item) => `${item.name}`);
+    connection.query("SELECT department_name FROM department", (err, data) => {
+      const department = data.map((item) => `${item.department_name}`);
       inquirer
         .prompt([
           {
             type: "list",
             name: "name",
             message: "Select the Department you wish to Remove",
-            choices: [...departments],
+            choices: [...department],
           },
         ])
         .then((data) => {
           const { name } = data;
           connection.query(
-            "SELECT * FROM department WHERE name = '" + name + "'",
+            "SELECT * FROM department WHERE department_name = '" + name + "'",
             (err, res) => {
               if (err) throw err;
               if (res.length === 0) {
-                console.log(`Department with Name ${data.name} Does NOT Exist.`);
+                console.log(`Department with name ${data.department_name} Does NOT Exist.`);
               }
               if (res.length !== 0) {
                 connection.query(
-                  "DELETE FROM department WHERE name = '" + name + "'",
+                  "DELETE FROM department WHERE department_name = '" + name + "'",
                   (err, res) => {
                     if (err) throw err;
                     if (res.affectedRows === 0) {
                       console.log(
-                        `Department with Name ${data.name} Does NOT Exist.`
+                        `Department with department_name ${data.department_name} Does NOT Exist.`
                       );
                     } else {
                       console.table({
-                        message: `\n-------------------\n Department with Name ${data.name} Has Been Successfully Removed.\n`,
+                        message: `\n-------------------\n Department with Department Name ${data.department_name} Has Been Successfully Removed.\n`,
                         affectedRows: res.affectedRows,
                       });
                       ViewAllDepartments();
@@ -596,14 +597,14 @@ function UpdateEmployeeManager() {
   });
 });
 }
-// ============ total utilized budget of a department ===========
+ 
+//----------View the Total Budget of each Department:
 function ViewTotalUtilizedBudgetByDepartment() {
-  // total budget: department, sum of salaries
-  const query = `SELECT department.name AS department, 
-   SUM(role.salary) AS utilized_budget FROM employee 
-   LEFT JOIN role ON employee.role_id = role.id 
-   LEFT JOIN department ON role.department_id = department.id 
-   GROUP BY department.name;`;
+  const query = `select department.department_name AS department,
+    SUM(role.salary) AS utilized_budget from role
+    LEFT JOIN employees ON role.id = employees.role_id
+    LEFT JOIN department ON role.department_id = department.id
+    GROUP BY department_name;`;
   connection.query(query, (err, data) => {
     if (err) throw err;
     console.table(data);
