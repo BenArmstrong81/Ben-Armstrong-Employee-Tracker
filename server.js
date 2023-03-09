@@ -1,7 +1,6 @@
 //----------Imports and requires inquirer, figlet and console.table:
 const inquirer = require('inquirer');
 const figlet = require('figlet');
-// require("console.table");
 //----------Imports and requires mysql2:
 const mysql = require('mysql2');
 
@@ -14,6 +13,7 @@ figlet("Employee Manager", function(err, data) {
   }
   console.log(data)
 });    
+
 //----------Connects to database:
 const connection = mysql.createConnection(
     {
@@ -22,7 +22,7 @@ const connection = mysql.createConnection(
       password: 'S0phi32021!',
       database: 'employees_db'
     },
-    console.log(`Connected to the Employee Management Database.`)
+    console.log(`✨Connected to the Employee Management Database.✨`)
   );
 //-----------Initiates Main Menu Options:
 const mainMenu = () => { 
@@ -42,6 +42,9 @@ const mainMenu = () => {
             "View all Departments", 
             "Add a Department", 
             "Remove a Department", 
+            "View all Employees By Manager", 
+            "Update an Employee Manager", 
+            "View all Employees By Department",
             "View Total Utilized Budget of a Department",
             "Quit", 
         ],
@@ -87,6 +90,18 @@ const mainMenu = () => {
         case "Remove a Department":
             RemoveDepartment();
             break;
+
+        case "View all Employees By Manager":
+            ViewAllEmployeesByManager();
+            break;
+
+        case "Update an Employee Manager":
+            UpdateEmployeeManager();
+            break;
+        
+          case "View all Employees By Department":
+            ViewAllEmployeesByDepartment();
+            break;
   
         case "View Total Utilized Budget of a Department":
             ViewTotalUtilizedBudgetByDepartment();
@@ -123,6 +138,7 @@ const mainMenu = () => {
       mainMenu();
     });
   }
+  
 //----------Upon user input "Add Employee" which will include: first name, last name, role, and manager
 function AddEmployee() {
     let userInput1;
@@ -211,6 +227,7 @@ function AddEmployee() {
         );
       });
   }
+
 //----------Upon User Input, It Allows The User to Remove an Employee:
 function RemoveEmployee() {
     const query = `SELECT 
@@ -310,6 +327,7 @@ function RemoveEmployee() {
         });
     });
   }
+
 //----------Upon User Input, Allows them to View All Roles in the Organization:
 function ViewAllRoles() {
     const query = `SELECT 
@@ -417,6 +435,7 @@ function ViewAllRoles() {
         });
     });
   }
+
 //----------Upon User Input, Allows User to View All Departments:
 function ViewAllDepartments() {
     const query = `SELECT 
@@ -502,15 +521,15 @@ function ViewAllDepartments() {
         });
     });
   }
-// =============view all employees by manager===========
+
+//----------View All Employees by their Manager:
 function ViewAllEmployeesByManager() {
-  // display a list includes all managers: first name, last name
   const query = `SELECT 
    employees.id, 
    employees.first_name, 
    employees.last_name, 
    role.title, 
-   department.name AS 
+   department_name AS 
    department, 
    CONCAT(manager.first_name, ' ', manager.last_name) AS manager 
    FROM employees 
@@ -524,16 +543,14 @@ function ViewAllEmployeesByManager() {
     mainMenu();
   });
 }
-// ========== update employee manager ==========
+
+//----------Update an Employee's Manager:
 function UpdateEmployeeManager() {
-  // show all ee's as a list
-  const query = `SELECT first_name, last_name FROM employee;`;
+  const query = `SELECT first_name, last_name FROM employees;`;
   connection.query(query, (err, data) => {
-  // map all ee's to an array
   const employees = data.map(
     (item) => `${item.first_name} ${item.last_name}`
   );
-  // prompt user to select an ee to update
   inquirer
     .prompt([
       {
@@ -544,13 +561,9 @@ function UpdateEmployeeManager() {
       },
     ])
     .then((answer) => {
-      // console.log("line 400+ &&&", answer); // returns the selected employee
-      // get the selected employee's first and last name
       const selectedEmployee = answer.employee.split(" ");
       const firstName = selectedEmployee[0];
       const lastName = selectedEmployee[1];
- 
-      // query all managers 
       const query = `SELECT 
       first_name, last_name 
       FROM employees 
@@ -558,12 +571,9 @@ function UpdateEmployeeManager() {
       AND first_name != '${firstName}' 
       AND last_name != '${lastName}';`;
       connection.query(query, (err, data) => {
-        //console.log("line 400+ ***", data); 
-        // map all managers to an array
         const managers = data.map(
           (item) => `${item.first_name} ${item.last_name}`
         );
-        // prompt the user to select a new manager
         inquirer
           .prompt({
             name: "manager",
@@ -572,13 +582,11 @@ function UpdateEmployeeManager() {
             choices: managers,
           })
           .then((answer) => {
-            // get the selected manager's id
-            const query = `SELECT id FROM employee WHERE first_name = ? AND last_name = ?`;
+            const query = `SELECT id FROM employees WHERE first_name = ? AND last_name = ?`;
             connection.query(query, [answer.manager.split(" ")[0], answer.manager.split(" ")[1]], (err, data) => {
               if (err) throw err;
               const managerId = data[0].id;
-              // update the employee's manager in the database
-              const query = `UPDATE employee SET manager_id = ? WHERE first_name = ? AND last_name = ?`;
+              const query = `UPDATE employees SET manager_id = ? WHERE first_name = ? AND last_name = ?`;
               connection.query(
                 query,
                 [managerId, firstName, lastName],
@@ -597,7 +605,64 @@ function UpdateEmployeeManager() {
   });
 });
 }
- 
+
+//----------View all Employees by their Department:
+function ViewAllEmployeesByDepartment() {
+  inquirer
+    .prompt({
+      name: "department",
+      type: "list",
+      message: "Which Department would you like to View?",
+      choices: [
+        "Executive",
+        "Treasuries",
+        "Operations",
+        "Retail",
+        "Risk & Compliance",
+        "Products",
+        "Data, Analytics, Info Mgmt",
+        "Information and Technology",
+      ],
+    })
+    .then((answer) => {
+      switch (answer.department) {
+        case "Executive":
+          return myViewEmployeesByDepartment("Executive");
+        case "Treasuries":
+          return myViewEmployeesByDepartment("Treasuries");
+        case "Operations":
+          return myViewEmployeesByDepartment("Operations");
+        case "Retail":
+          return myViewEmployeesByDepartment("Retail");
+        case "Risk & Compliance":
+          return myViewEmployeesByDepartment("Risk & Compliance");
+          case "Products":
+          return myViewEmployeesByDepartment("Products");
+          case "Data, Analytics, Info Mgmt":
+          return myViewEmployeesByDepartment("Data, Analytics, Info Mgmt");
+          case "Information and Technology":
+          return myViewEmployeesByDepartment("Information and Technology");
+      }
+    });
+  function myViewEmployeesByDepartment(department) {
+    const query = `
+     SELECT employees.id, 
+     employees.first_name, 
+     employees.last_name, 
+     role.title, 
+     department_name AS department 
+     FROM employees 
+     LEFT JOIN role ON employees.role_id = role.id 
+     LEFT JOIN department ON role.department_id = department.id 
+     WHERE department_name = ?;`;
+    connection.query(query, department, (err, data) => {
+      if (err) throw err;
+      console.table(data);
+      mainMenu();
+    });
+  }
+}
+
 //----------View the Total Budget of each Department:
 function ViewTotalUtilizedBudgetByDepartment() {
   const query = `select department.department_name AS department,
@@ -614,8 +679,9 @@ function ViewTotalUtilizedBudgetByDepartment() {
   
 //----------Exit's the Application:
 function Exit() {
-  console.log("Thanks for Using the Employee Management Tracker Have a ✨ GREAT Day!✨");
+  console.log("Thanks for Using the Employee Management Tracker Have a GREAT Day!💖");
   connection.end();
 }
-  
+
+//----------Returns the User to the Main Menu:
 mainMenu();
