@@ -5,14 +5,18 @@ const figlet = require('figlet');
 const mysql = require('mysql2');
 
 //----------"Employee Manager" banner using figlet:
-figlet("Employee Manager", function(err, data) {
-  if (err) {
-      console.log('Something went wrong...');
-      console.dir(err);
-      return;
-  }
-  console.log(data)
-});    
+function printBanner (){
+return new Promise((resolve, reject) => {
+  figlet("Employee Manager", function(err, data) {
+    if (err) {
+        console.log('Something went wrong...');
+        console.dir(err);
+        return;
+    }
+    console.log(data)
+    return resolve();
+  })  
+})};    
 
 //----------Connects to database:
 const connection = mysql.createConnection(
@@ -25,7 +29,8 @@ const connection = mysql.createConnection(
     console.log(`✨Connected to the Employee Management Database.✨`)
   );
 //-----------Initiates Main Menu Options:
-const mainMenu = () => { 
+const mainMenu = async() => { 
+  await printBanner();
     inquirer
       .prompt({
         name: "startingOptions",
