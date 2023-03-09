@@ -124,21 +124,21 @@ You are required to submit BOTH of the following for review:
 Extending on from the last couple weeks using Node.js we learnt how to incororate MySQL. The modules in class included but not limited to Databases, Tables, CRUD, Schema, Seeds, JOIN and data types. 
 
 ## What Problems Did we Solve?
-We started with nothing and I had to create a BEN TO ADD AND FINISH HERE. 
+We started with nothing and I had to create all JS, SQL files from scratch.
 
 # Installation
 N/A
 
 # Usage
-To use and view this challenge you will need to fork or clone this repo to your machine. Then using intergrated terminal you can launch "npm start",   BEN TO ADD AND FINISH HERE.
+If you wish to use and this locally you will need to fork or clone this repo to your machine. Then using intergrated terminal you can launch "npm start", hope you have as much fun using the application as I did creating it!
 
 The follwing link will show a walk through of the working application:
-https://drive.google.com/file/d/1E04gktboB8i2qC0lqeUQJiMkUaqC16wZ/view?usp=sharing
+https://drive.google.com/file/d/11lgnb1pugJuwpZT5yZuORrayVeQ-0Nur/view?usp=sharing
 
-The following image's shows the web application's A) Working Console which includes User Input and all Tests passing, B) Deployed HTML file within the Browser:
 
-![My Web Development Portfolio webpage includes a navigation bar, a professional head shot image, multiple links (placeholders at this stage) to projects completed within the UniSA Full Stack Web Development course, and working links to contact me - even download an updated resume.](./images/Ben_Armstrong_OOP_TeamProfileGenerator_ScreenShot_WorkingConsole.PNG)
-![My Web Development Portfolio webpage includes a navigation bar, a professional head shot image, multiple links (placeholders at this stage) to projects completed within the UniSA Full Stack Web Development course, and working links to contact me - even download an updated resume.](./images/Ben_Armstrong_OOP_TeamProfileGenerator_ScreenShot_DeployedHTML.PNG)
+The following image shows the application working in the Intergrated Console via VSCode:
+
+![working employee tracker challange.](./Assets/BenArmstrong_EmployeeTracker_ScreenShotOfWorkingApplication.PNG)
 
 # Credits
 With special thanks to the UniSA Full Stack Web Development Class.
